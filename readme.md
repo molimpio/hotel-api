@@ -1,14 +1,14 @@
-#API REST com Flask
+##API REST com Flask
 Este projeto tem como objetivo desenvolver uma api rest para cadastro de hotéis.
 
-#Intruções 
+##Intruções 
 
-##Criar ambiente virtual
+###Criar ambiente virtual
 conda create -n hotel-api
 
-## Ativar ambiente virtual
+### Ativar ambiente virtual
 conda activate hotel-api
 
-## Rodar Flask
+### Rodar Flask
 export FLASK_APP=app.py
 flask run
