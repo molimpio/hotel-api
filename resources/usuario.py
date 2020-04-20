@@ -1,7 +1,8 @@
 from flask_restful import Resource, reqparse
 from models.usuario import UserModel
-from flask_jwt_extended import create_access_token, jwt_required
+from flask_jwt_extended import create_access_token, jwt_required, get_raw_jwt
 from werkzeug.security import safe_str_cmp
+from blacklist import BLACKLIST
 
 atributos = reqparse.RequestParser()
 atributos.add_argument('login', type=str, required=True, help="Campo login é obrigatório")
@@ -54,3 +55,13 @@ class UserLogin(Resource):
             token = create_access_token(identity=user.user_id)
             return {'access_token': token}, 200
         return {'message': 'Dados incorretos'}, 401
+
+
+class UserLogout(Resource):
+
+    @jwt_required
+    def post(self):
+        # JWT Token Identifier
+        jwt_id = get_raw_jwt()['jti']
+        BLACKLIST.add(jwt_id)
+        return {'message': 'Usuário deslogado com sucesso'}, 200
