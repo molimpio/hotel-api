@@ -1,34 +1,8 @@
 from flask_restful import Resource, reqparse
 from models.hotel import HotelModel
 from flask_jwt_extended import jwt_required
+from resources.filtros import normalize_path_params, consulta_com_cidade, consulta_sem_cidade
 import sqlite3
-
-
-def normalize_path_params(cidade=None,
-                          estrelas_min=0,
-                          estrelas_max=5,
-                          diaria_min=0,
-                          diaria_max=10000,
-                          limit=50,
-                          offset=0, **dados):
-    if cidade:
-        return {
-            'estrelas_min': estrelas_min,
-            'estrelas_max': estrelas_max,
-            'diaria_min': diaria_min,
-            'diaria_max': diaria_max,
-            'cidade': cidade,
-            'limit': limit,
-            'offset': offset,
-        }
-    return {
-        'estrelas_min': estrelas_min,
-        'estrelas_max': estrelas_max,
-        'diaria_min': diaria_min,
-        'diaria_max': diaria_max,
-        'limit': limit,
-        'offset': offset,
-    }
 
 
 # Params via query string, ex: /hoteis?cidade=Sao Paulo&estrelas_min=4&diaria_max=400
@@ -53,11 +27,9 @@ class Hoteis(Resource):
         parametros = normalize_path_params(**dados_validos)
 
         if not parametros.get('cidade'):
-            query = "SELECT * FROM hoteis WHERE (estrelas >= ? and estrelas <= ?) " \
-                    "and (diaria >= ? and diaria <= ?) LIMIT ? OFFSET ?"
+            query = consulta_sem_cidade
         else:
-            query = "SELECT * FROM hoteis WHERE (estrelas >= ? and estrelas <= ?) " \
-                    "and (diaria >= ? and diaria <= ?) and cidade = ? LIMIT ? OFFSET ?"
+            query = consulta_com_cidade
 
         tupla = tuple([parametros[chave] for chave in parametros])
         resultado = cursor.execute(query, tupla)
@@ -69,10 +41,14 @@ class Hoteis(Resource):
                 'nome': linha[1],
                 'estrelas': linha[2],
                 'diaria': linha[3],
-                'cidade': linha[4]
+                'cidade': linha[4],
+                'site_id': linha[5]
             })
 
-        return {'hoteis': hoteis}
+        return {
+                'hoteis': hoteis,
+                'total_itens': len(hoteis)
+            }
 
 
 class Hotel(Resource):
@@ -81,6 +57,7 @@ class Hotel(Resource):
     argumentos.add_argument('estrelas', type=float, required=True, help="Campo estrelas é obrigatório")
     argumentos.add_argument('cidade', type=str, required=True, help="Campo cidade é obrigatório")
     argumentos.add_argument('diaria')
+    argumentos.add_argument('site_id', type=int, required=True, help="Campo site id é obrigatório")
 
     def get(self, hotel_id):
         hotel = HotelModel.find_hotel(hotel_id)
