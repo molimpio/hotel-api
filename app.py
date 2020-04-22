@@ -5,12 +5,14 @@ from resources.usuario import User, UserRegister, UserLogin, UserLogout
 from flask_jwt_extended import JWTManager
 from blacklist import BLACKLIST
 from resources.site import Site, Sites
+import datetime
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///banco.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'asdfg'
 app.config['JWT_BLACKLIST_ENABLED'] = True
+app.config['JWT_EXPIRATION_DELTA'] = datetime.timedelta(days=1)
 api = Api(app)
 
 jwt = JWTManager(app)
