@@ -7,6 +7,7 @@ from blacklist import BLACKLIST
 atributos = reqparse.RequestParser()
 atributos.add_argument('login', type=str, required=True, help="Campo login é obrigatório")
 atributos.add_argument('senha', type=str, required=True, help="Campo senha é obrigatório")
+atributos.add_argument('ativado', type=bool)
 
 
 class User(Resource):
@@ -40,6 +41,7 @@ class UserRegister(Resource):
             return {'message': 'Usuário com login {} já existe'.format(login)}, 200
 
         user = UserModel(**dados)
+        user.ativado = False
         user.save_user()
         return {'message': 'Usuário cadastrado com sucesso'}, 201
 
@@ -52,8 +54,10 @@ class UserLogin(Resource):
         user = UserModel.find_by_login(dados['login'])
 
         if user and safe_str_cmp(user.senha, dados['senha']):
-            token = create_access_token(identity=user.user_id)
-            return {'access_token': token}, 200
+            if user.ativado:
+                token = create_access_token(identity=user.user_id)
+                return {'access_token': token}, 200
+            return {'message': 'Usuário não está ativado no sistema'}, 200
         return {'message': 'Dados incorretos'}, 401
 
 
@@ -65,3 +69,17 @@ class UserLogout(Resource):
         jwt_id = get_raw_jwt()['jti']
         BLACKLIST.add(jwt_id)
         return {'message': 'Usuário deslogado com sucesso'}, 200
+
+
+class UserConfirm(Resource):
+    # raiz_do_site/confirmacao/{user_id}
+    @classmethod
+    def get(cls, user_id):
+        user = UserModel.find_user(user_id)
+
+        if not user:
+            return {'message': 'User ID {} not found'.format(user_id)}, 200
+
+        user.ativado = True
+        user.save_user()
+        return {'message': 'Usuário confirmado com sucesso'}, 200
